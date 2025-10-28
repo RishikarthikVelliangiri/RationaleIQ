@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB } from './config/database.js';
+import mongoose from 'mongoose';
 import { extractApiKey } from './middleware/apiKeyMiddleware.js';
 
 // Import routes
@@ -32,7 +32,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(extractApiKey);
 
 // Connect to MongoDB
-connectDB();
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error);
+  });
 
 // Health check
 app.get('/', (req, res) => {
