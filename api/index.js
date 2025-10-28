@@ -59,6 +59,12 @@ app.get('/', (req, res) => {
   });
 });
 
+// Log all requests for debugging
+app.use((req, res, next) => {
+  console.log(`📨 Incoming: ${req.method} ${req.path}`);
+  next();
+});
+
 // API Routes (no /api prefix since we're already at /api)
 app.use('/auth', authRouter);
 app.use('/documents', documentsRouter);
@@ -71,8 +77,10 @@ app.use('/projects', projectsRouter);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err);
+  console.error('❌ Error stack:', err.stack);
   res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
+    error: err.message || 'Internal server error',
+    details: err.stack
   });
 });
 

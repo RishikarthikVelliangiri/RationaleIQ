@@ -78,34 +78,44 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
   try {
+    console.log('🔐 Login attempt received:', { username: req.body?.username })
     const { username, password } = req.body
 
     // Validate input
     if (!username || !password) {
+      console.log('❌ Missing credentials')
       return res.status(400).json({ 
         error: 'Please provide username and password' 
       })
     }
 
     // Find user
+    console.log('🔍 Searching for user:', username.toLowerCase())
     const user = await User.findOne({ username: username.toLowerCase() })
     if (!user) {
+      console.log('❌ User not found:', username.toLowerCase())
       return res.status(401).json({ 
         error: 'Invalid username or password' 
       })
     }
+
+    console.log('✅ User found:', user.username)
 
     // Check password
     const isPasswordValid = await user.comparePassword(password)
     if (!isPasswordValid) {
+      console.log('❌ Invalid password for user:', username)
       return res.status(401).json({ 
         error: 'Invalid username or password' 
       })
     }
 
+    console.log('✅ Password valid, generating token')
+
     // Generate token
     const token = generateToken(user._id)
 
+    console.log('✅ Login successful for user:', username)
     res.json({
       message: 'Login successful',
       user: {
@@ -117,9 +127,11 @@ router.post('/login', async (req, res) => {
       token
     })
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('❌ Login error:', error)
+    console.error('Error stack:', error.stack)
     res.status(500).json({ 
-      error: 'Login failed. Please try again.' 
+      error: 'Login failed. Please try again.',
+      details: error.message
     })
   }
 })
