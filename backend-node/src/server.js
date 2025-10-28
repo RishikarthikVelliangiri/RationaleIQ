@@ -66,10 +66,15 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 RationaleIQ API running on port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🌐 API: http://localhost:${PORT}`);
-  console.log(`📊 Health: http://localhost:${PORT}/`);
-});
+// Start server (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 RationaleIQ API running on port ${PORT}`);
+    console.log(`📝 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🌐 API: http://localhost:${PORT}`);
+    console.log(`📊 Health: http://localhost:${PORT}/`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;
