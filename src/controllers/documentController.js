@@ -4,15 +4,38 @@ import geminiService from '../services/geminiService.js';
 import embeddingService from '../services/embeddingService.js';
 import path from 'path';
 import { createRequire } from 'module';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 // Import CommonJS modules
 const require = createRequire(import.meta.url);
-const pdfParseModule = require('pdf-parse');
 const removeMarkdownModule = require('remove-markdown');
-
-const PDFParseClass = pdfParseModule?.PDFParse;
-const legacyPdfParseFn = typeof pdfParseModule === 'function' ? pdfParseModule : pdfParseModule?.default;
 const removeMd = removeMarkdownModule?.default ?? removeMarkdownModule;
+
+// Helper function to extract text from PDF using pdfjs-dist
+async function extractTextFromPDF(buffer) {
+  try {
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(buffer),
+      useSystemFonts: true,
+      standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/standard_fonts/',
+    });
+    
+    const pdf = await loadingTask.promise;
+    let fullText = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    return fullText.trim();
+  } catch (error) {
+    console.error('PDF extraction error:', error);
+    throw new Error('Failed to extract text from PDF: ' + error.message);
+  }
+}
 
 export const createDocument = async (req, res) => {
   try {
@@ -54,19 +77,7 @@ export const uploadDocument = async (req, res) => {
 
     if (ext === '.pdf' || req.file.mimetype === 'application/pdf') {
       try {
-        if (PDFParseClass) {
-          // Extract text from PDF buffer using the PDFParse class (newer versions)
-          const parser = new PDFParseClass({ data: req.file.buffer });
-          const textResult = await parser.getText();
-          await parser.destroy();
-          content = textResult?.text ? textResult.text.trim() : '';
-        } else if (typeof legacyPdfParseFn === 'function') {
-          // Fallback for older versions that export a direct function
-          const data = await legacyPdfParseFn(req.file.buffer);
-          content = data && data.text ? data.text.trim() : '';
-        } else {
-          throw new Error('pdf-parse module is not supported in this environment.');
-        }
+        content = await extractTextFromPDF(req.file.buffer);
         
         if (!content) {
           throw new Error('No text could be extracted from the PDF');
