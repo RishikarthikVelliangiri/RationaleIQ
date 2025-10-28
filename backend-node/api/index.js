@@ -16,6 +16,11 @@ import projectsRouter from '../src/routes/projects.js';
 // Load environment variables
 dotenv.config();
 
+console.log('🔧 Initializing API...');
+console.log('📍 Environment:', process.env.NODE_ENV);
+console.log('🔑 MongoDB URI exists:', !!process.env.MONGODB_URI);
+console.log('🔑 Gemini API Key exists:', !!process.env.GEMINI_API_KEY);
+
 // Initialize Express app
 const app = express();
 
@@ -45,12 +50,19 @@ mongoose
 
 // Health check at root of this function (which is /api)
 app.get('/', (req, res) => {
+  console.log('✅ Health check endpoint hit');
   res.json({
     app: 'RationaleIQ API',
     status: 'running',
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'production'
+    environment: process.env.NODE_ENV || 'production',
+    timestamp: new Date().toISOString()
   });
+});
+
+app.get('/health', (req, res) => {
+  console.log('✅ /health endpoint hit');
+  res.json({ status: 'ok' });
 });
 
 // API Routes (no /api prefix since we're already at /api)
