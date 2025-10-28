@@ -2,6 +2,12 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
+console.log('🔧 API Configuration:', {
+  API_URL,
+  env: import.meta.env.VITE_API_URL,
+  mode: import.meta.env.MODE
+});
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_URL,
@@ -12,6 +18,13 @@ const api = axios.create({
 
 // Add interceptor to include API key and auth token from localStorage
 api.interceptors.request.use((config) => {
+  console.log('📤 API Request:', {
+    method: config.method?.toUpperCase(),
+    url: config.url,
+    baseURL: config.baseURL,
+    fullURL: `${config.baseURL}${config.url}`
+  });
+  
   // Add Gemini API key
   const apiKey = localStorage.getItem('gemini_api_key')
   if (apiKey) {
@@ -26,8 +39,32 @@ api.interceptors.request.use((config) => {
   
   return config
 }, (error) => {
+  console.error('❌ Request Error:', error);
   return Promise.reject(error)
 })
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.error('❌ API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
+      data: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
 
 // Documents API
 export const documentsAPI = {

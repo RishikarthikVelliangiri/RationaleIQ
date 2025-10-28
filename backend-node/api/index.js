@@ -1,52 +1,20 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import { extractApiKey } from '../src/middleware/apiKeyMiddleware.js';
-
-// Import routes
-import authRouter from '../src/routes/auth.js';
-import documentsRouter from '../src/routes/documents.js';
-import decisionsRouter from '../src/routes/decisions.js';
-import searchRouter from '../src/routes/search.js';
-import dashboardRouter from '../src/routes/dashboard.js';
-import aiRouter from '../src/routes/ai.js';
-import projectsRouter from '../src/routes/projects.js';
-
-// Load environment variables
-dotenv.config();
-
-console.log('🔧 Initializing API...');
-console.log('📍 Environment:', process.env.NODE_ENV);
-console.log('🔑 MongoDB URI exists:', !!process.env.MONGODB_URI);
-console.log('🔑 Gemini API Key exists:', !!process.env.GEMINI_API_KEY);
 
 // Initialize Express app
 const app = express();
 
+console.log('🔧 API Starting...');
+
 // Middleware
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
+  origin: '*', // Allow all for now to test
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Extract API key from headers (for user-provided keys)
-app.use(extractApiKey);
-
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('❌ MongoDB connection error:', error);
-  });
+console.log('✅ Middleware configured');
 
 // Health check at root of this function (which is /api)
 app.get('/', (req, res) => {
@@ -62,33 +30,40 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
   console.log('✅ /health endpoint hit');
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok', message: 'API is healthy' });
 });
 
-// API Routes (no /api prefix since we're already at /api)
-app.use('/auth', authRouter);
-app.use('/documents', documentsRouter);
-app.use('/decisions', decisionsRouter);
-app.use('/search', searchRouter);
-app.use('/dashboard', dashboardRouter);
-app.use('/ai', aiRouter);
-app.use('/projects', projectsRouter);
+app.get('/test', (req, res) => {
+  console.log('✅ /test endpoint hit');
+  res.json({ 
+    message: 'Test endpoint working',
+    env: {
+      hasMongoURI: !!process.env.MONGODB_URI,
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasJWTSecret: !!process.env.JWT_SECRET
+    }
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('❌ Error:', err);
   res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
+    error: err.message || 'Internal server error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
 // 404 handler
 app.use((req, res) => {
+  console.log('❌ 404:', req.method, req.path);
   res.status(404).json({ 
     error: 'Route not found',
     path: req.path,
     method: req.method
   });
 });
+
+console.log('✅ Routes configured');
 
 export default app;
