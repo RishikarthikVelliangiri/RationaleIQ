@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB } from '../src/config/database.js';
+import mongoose from 'mongoose';
 import { extractApiKey } from '../src/middleware/apiKeyMiddleware.js';
 
 // Import routes
@@ -31,19 +31,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(extractApiKey);
 
 // Connect to MongoDB
-connectDB();
-
-// Health check
-app.get('/', (req, res) => {
-  res.json({
-    app: 'RationaleIQ',
-    status: 'running',
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'production'
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error);
   });
-});
 
-app.get('/api', (req, res) => {
+// Health check at root of this function (which is /api)
+app.get('/', (req, res) => {
   res.json({
     app: 'RationaleIQ API',
     status: 'running',
@@ -52,14 +53,14 @@ app.get('/api', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', authRouter);
-app.use('/api/documents', documentsRouter);
-app.use('/api/decisions', decisionsRouter);
-app.use('/api/search', searchRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api/ai', aiRouter);
-app.use('/api/projects', projectsRouter);
+// API Routes (no /api prefix since we're already at /api)
+app.use('/auth', authRouter);
+app.use('/documents', documentsRouter);
+app.use('/decisions', decisionsRouter);
+app.use('/search', searchRouter);
+app.use('/dashboard', dashboardRouter);
+app.use('/ai', aiRouter);
+app.use('/projects', projectsRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -79,4 +80,3 @@ app.use((req, res) => {
 });
 
 export default app;
-
