@@ -16,7 +16,7 @@ function UserSetup({ onUserSetup }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setIsLoading(true)
+    setLoading(true)
 
     console.log('🔐 Authentication attempt:', { mode, username });
 
