@@ -3,8 +3,9 @@ import { User, Lock } from 'lucide-react'
 import Card, { CardHeader, CardBody } from './Card'
 import Button from './Button'
 import ThemeToggle from './ThemeToggle'
+import api from '../services/api'
 
-const UserSetup = ({ onUserSetup }) => {
+function UserSetup({ onUserSetup }) {
   const [mode, setMode] = useState('login') // 'login' or 'register'
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
@@ -15,7 +16,9 @@ const UserSetup = ({ onUserSetup }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setIsLoading(true)
+
+    console.log('🔐 Authentication attempt:', { mode, username });
 
     try {
       if (mode === 'register') {
@@ -43,26 +46,37 @@ const UserSetup = ({ onUserSetup }) => {
       }
 
       const endpoint = mode === 'register' ? '/auth/register' : '/auth/login'
-      const response = await fetch(`http://localhost:8000/api${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, username, password })
-      })
+      
+      console.log('📡 Making auth request:', {
+        endpoint,
+        baseURL: api.defaults.baseURL,
+        fullURL: `${api.defaults.baseURL}${endpoint}`,
+        data: { username, hasPassword: !!password }
+      });
 
-      const data = await response.json()
+      const response = await api.post(endpoint, { name, username, password })
+      const data = response.data
 
-      if (response.ok) {
-        // Store user data and token
-        localStorage.setItem('user', JSON.stringify(data.user))
-        localStorage.setItem('auth_token', data.token)
-        // Clear any previous route state and redirect to dashboard
-        window.history.replaceState(null, '', '/dashboard')
-        onUserSetup(data.user)
-      } else {
-        setError(data.error || 'Authentication failed')
-      }
+      console.log('✅ Auth response:', { 
+        status: response.status,
+        hasUser: !!data.user,
+        hasToken: !!data.token 
+      });
+
+      // Store user data and token
+      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('auth_token', data.token)
+      // Clear any previous route state and redirect to dashboard
+      window.history.replaceState(null, '', '/dashboard')
+      onUserSetup(data.user)
     } catch (err) {
-      setError('Connection failed. Please make sure the server is running.')
+      console.error('❌ Auth error:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
+      setError(err.response?.data?.error || 'Connection failed. Please make sure the server is running.')
     } finally {
       setLoading(false)
     }
