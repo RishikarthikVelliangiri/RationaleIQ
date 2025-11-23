@@ -6,7 +6,7 @@ dotenv.config();
 class GeminiService {
   constructor() {
     this.defaultApiKey = process.env.GEMINI_API_KEY;
-    this.model = 'gemini-2.0-flash-001';
+    this.model = 'gemini-2.5-flash';
     // Use v1 endpoint directly since v1beta doesn't accept our API key
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1/models';
 
