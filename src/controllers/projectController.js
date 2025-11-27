@@ -226,8 +226,8 @@ export const analyzeProject = async (req, res) => {
       `=== ${doc.filename || doc.title} ===\n${doc.content}\n`
     ).join('\n\n')
     
-    // Extract total insights across ALL documents
-    const decisions = await geminiService.extractDecisions(combinedContext, customPrompt, totalInsights)
+    // Extract total insights across ALL documents, honoring per-request API key if provided
+    const decisions = await geminiService.extractDecisions(combinedContext, customPrompt, totalInsights, req.geminiApiKey)
     
     // Save decisions (they may reference multiple docs, so we'll use first doc as primary)
     const savedDecisions = []

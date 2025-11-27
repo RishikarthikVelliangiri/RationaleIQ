@@ -8,8 +8,8 @@ export const explainDecision = async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
     
-    // Use Gemini to generate explanation
-    const explanation = await geminiService.generateExplanation(prompt);
+    // Use Gemini to generate explanation (use user's key if provided via header)
+    const explanation = await geminiService.generateExplanation(prompt, req.geminiApiKey);
     
     res.json({ explanation });
   } catch (error) {

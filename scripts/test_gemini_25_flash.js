@@ -7,16 +7,23 @@
  *  - or: node scripts/test_gemini_25_flash.js --key=xxx --mode=long --repeats=5
  */
 
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
 
 dotenv.config();
 
-const argv = require('minimist')(process.argv.slice(2));
+// Parse simple CLI args (no dependencies) --format: --key=VALUE --mode=long --repeats=3
+const args = process.argv.slice(2);
+const argv = args.reduce((acc, arg) => {
+  if (arg.startsWith('--')) {
+    const [k, v] = arg.slice(2).split('=');
+    acc[k] = v === undefined ? true : v;
+  }
+  return acc;
+}, {});
 const apiKey = argv.key || process.env.GEMINI_API_KEY;
 const mode = argv.mode || 'short';
-const repeats = parseInt(argv.repeats || '1');
+const repeats = parseInt(argv.repeats || '1', 10);
 const baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent';
 
 if (!apiKey) {
@@ -30,7 +37,19 @@ performance and operational considerations for migrating from on-premises infras
 
 Here are additional details: 1) 120k monthly users, 2) low-latency requirements for authenticated APIs, 3) existing monolith in a data center, 4) desire to cut operating costs by 30%. Provide specifics.`;
 
-const prompt = mode === 'long' ? longPrompt : shortPrompt;
+let prompt = mode === 'long' ? longPrompt : shortPrompt;
+if (mode === 'huge') {
+  // Create a very large prompt to test input size limits: 50,000 characters
+  const hugePrompt = 'A'.repeat(50_000);
+  console.log('Using huge prompt of length:', hugePrompt.length);
+  prompt = hugePrompt; // override
+}
+// Special mode to request a very large output
+const bigOutPrompt = `Write a very long, detailed, and technical article of roughly 3,000 words (around 20,000 characters) about the migration of an enterprise-scale web application from on-prem to cloud.
+Include sections on architecture changes, cost models, security, performance optimization, data migration strategies, and a migration timeline. Use clear headings and bullet lists where relevant.`;
+if (mode === 'bigout') {
+  prompt = bigOutPrompt;
+}
 
 async function callGemini(index) {
   const url = `${baseUrl}?key=${apiKey}`;

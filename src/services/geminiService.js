@@ -6,7 +6,8 @@ dotenv.config();
 class GeminiService {
   constructor() {
     this.defaultApiKey = process.env.GEMINI_API_KEY;
-    this.model = 'gemini-2.5-flash';
+    // Allow overriding model via environment variables for testing
+    this.model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     // Use v1 endpoint directly since v1beta doesn't accept our API key
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1/models';
 
@@ -116,7 +117,8 @@ Return ONLY the JSON array, no other text.
       const url = `${this.baseUrl}/${this.model}:generateContent?key=${effectiveApiKey}`;
 
       console.log('Gemini extractDecisions request URL:', `${this.baseUrl}/${this.model}:generateContent`);
-      console.log('Gemini API key present?', Boolean(effectiveApiKey));
+      console.log('Gemini model:', this.model);
+      console.log('Using Gemini API key (first 6 chars):', effectiveApiKey ? `${effectiveApiKey.substring(0,6)}...` : 'none');
       
       const response = await fetch(url, {
         method: 'POST',
