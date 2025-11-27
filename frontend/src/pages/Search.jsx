@@ -85,27 +85,19 @@ const Search = () => {
       
       if (searchMode === 'semantic') {
         // Semantic search
-        response = await fetch(`${import.meta.env.VITE_API_URL}/search/semantic`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            query, 
-            limit: 10, 
-            minSimilarity: 0.3,
-            category: selectedCategory || undefined
-          })
+        response = await api.post('/search/semantic', {
+          query,
+          limit: 10,
+          minSimilarity: 0.3,
+          category: selectedCategory || undefined
         })
       } else if (searchMode === 'hybrid') {
         // Hybrid search (semantic + keyword)
-        response = await fetch(`${import.meta.env.VITE_API_URL}/search/hybrid`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            query, 
-            limit: 10, 
-            minScore: 0.2,
-            category: selectedCategory || undefined
-          })
+        response = await api.post('/search/hybrid', {
+          query,
+          limit: 10,
+          minScore: 0.2,
+          category: selectedCategory || undefined
         })
       } else {
         // Legacy keyword search
@@ -115,8 +107,8 @@ const Search = () => {
         return
       }
       
-      if (response.ok) {
-        const data = await response.json()
+      if (response.status === 200 || response.status === 201 || response.status === 204 || response.status === 304 || (response && response.data)) {
+        const data = response.data || await response.json()
         setResults(data)
       } else {
         toast.error('Search failed. Please try again.')

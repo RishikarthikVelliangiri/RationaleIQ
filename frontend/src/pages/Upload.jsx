@@ -25,7 +25,7 @@ const Upload = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/projects`)
+      const response = await api.get('/projects')
       if (response.ok) {
         const data = await response.json()
         setProjects(data)

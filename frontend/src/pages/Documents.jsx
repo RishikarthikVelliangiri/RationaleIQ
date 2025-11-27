@@ -25,16 +25,15 @@ export default function Documents() {
       setLoading(true)
       
       // Fetch documents
-      const docsResponse = await fetch(`${import.meta.env.VITE_API_URL}/documents`)
-      if (!docsResponse.ok) throw new Error('Failed to fetch documents')
-      const docsData = await docsResponse.json()
+      const docsResponse = await api.get('/documents')
+      const docsData = docsResponse.data
       const docs = Array.isArray(docsData) ? docsData : []
       setDocuments(docs)
       
       // Fetch projects
-      const projectsResponse = await fetch(`${import.meta.env.VITE_API_URL}/projects`)
-      if (projectsResponse.ok) {
-        const projectsData = await projectsResponse.json()
+      const projectsResponse = await api.get('/projects')
+      if (projectsResponse.status === 200) {
+        const projectsData = projectsResponse.data
         setProjects(Array.isArray(projectsData) ? projectsData : [])
       }
       
@@ -93,9 +92,7 @@ export default function Documents() {
     if (!confirm('Are you sure you want to delete this document?')) return
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/documents/${documentId}`, {
-        method: 'DELETE',
-      })
+      const response = await api.delete(`/documents/${documentId}`)
       
       if (!response.ok) throw new Error('Failed to delete document')
       
@@ -109,9 +106,7 @@ export default function Documents() {
 
   const handleClearAll = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/documents/clear-all`, {
-        method: 'DELETE',
-      })
+      const response = await api.delete('/documents/clear-all')
       
       if (!response.ok) throw new Error('Failed to clear documents')
       
